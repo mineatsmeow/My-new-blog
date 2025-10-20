@@ -1,0 +1,254 @@
+---
+title: "A2 Cardio-Dataset"
+author: "Swetha KV"
+date: "2025-10-12"
+categories: [Scottish CVD]
+format: html
+---
+
+## Setting up R Packages
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(dplyr)
+library(naniar)
+library(skimr)
+library(crosstable)
+library(tinytable)
+library(ggformula)
+library(mosaic)
+library(tidyverse)
+library(vcd)
+library(vcdExtra) 
+library(resampledata)
+library(ggmosaic)
+library(ggpubr) 
+library(visdat)
+library(naniar) 
+library(DT)
+library(ggrepel)
+library(marquee)
+library(visStatistics)
+```
+
+## Read Data
+
+```{r}
+data(package = "CardioDataSets")
+```
+
+```{r}
+data("scottish_CVD_df", package = "CardioDataSets")
+View( scottish_CVD_df )
+```
+
+```{r}
+data("scottish_CVD_df", package = "CardioDataSets")
+dplyr::glimpse( scottish_CVD_df )
+```
+
+##Data Dictionary
+
+
+##Examine Data
+
+```{r}
+base::names(scottish_CVD_df)
+```
+
+```{r}
+dplyr::glimpse(scottish_CVD_df)
+```
+
+```{r}
+base::dim(scottish_CVD_df)
+```
+
+```{r}
+utils::str(scottish_CVD_df)
+```
+
+## Viewing Missing Data
+
+```{r}
+visdat::vis_dat(scottish_CVD_df)
+```
+
+```{r}
+visdat::vis_miss(scottish_CVD_df)
+```
+
+```{r}
+scottish_CVD_df <- scottish_CVD_df %>% 
+ tidyr::drop_na()
+```
+
+```{r}
+scottish_CVD_df <- scottish_CVD_df %>%
+  naniar::replace_with_na_all(data = ., condition = ~ .x %in% common_na_numbers) %>%
+  naniar::replace_with_na_all(data = ., condition = ~ .x %in% common_na_strings)
+glimpse(scottish_CVD_df_modified)
+```
+
+```{r}
+visdat::vis_miss(scottish_CVD_df)
+```
+
+```{r}
+scottish_CVD_df %>% tt ()
+```
+```{r}
+scottish_CVD_df %>%
+  DT::datatable(
+    caption = htmltools::tags$caption(
+      style = "caption-side: top; text-align: left; color: black; font-size: 150%;",
+      "GSS Wages Dataset (Clean)"
+    ),
+    options = list(pageLength = 10, autoWidth = TRUE)
+  ) %>%
+  DT::formatStyle(
+    columns = names(scottish_CVD_df),
+    fontFamily = "Roboto Condensed",
+    fontSize = "12px"
+  )
+```
+
+```{r}
+scottish_CVD_df <- scottish_CVD_df %>%
+  mutate(across(where(is.character), as.factor)) %>% 
+   mutate(cvddef = as.factor(cvddef)) %>% 
+  relocate(where(is.factor))
+glimpse(scottish_CVD_df)
+```
+
+```{r}
+###Is there a relationship between age and socioeconomic deprivation (Carstairs index)?
+mosaic::cor_test(age ~ carstair, data = scottish_CVD_df) %>%
+  broom::tidy() %>%
+  knitr::kable(
+    digits = 3,
+    caption = "Correlation between Age and Carstairs Index"
+  )
+
+```
+There is no significant correlation between age and socioeconomic deprivation (Carstairs index) in the dataset (r = -0.003, p = 0.761).
+
+This suggests that people of different ages are equally distributed across various levels of deprivation — older people are not more likely to live in deprived or affluent areas.
+
+```{r}
+scottish_CVD_df %>%
+  drop_na(age, carstair) %>%
+  gf_point(carstair ~ age) %>%
+  gf_smooth() %>%
+  gf_labs(
+    title = "Age vs Carstairs Deprivation",
+    subtitle = "Are older individuals from more deprived areas?",
+    x = "Age (years)",
+    y = "Carstairs Deprivation Index"
+  )
+```
+
+```{r}
+mosaic::cor_test(as.numeric(cvddef) ~ age, data = scottish_CVD_df) %>%
+  broom::tidy() %>%
+  knitr::kable(
+    digits = 3)
+```
+The correlation (r = 0.362) is positive and moderate in strength.
+
+The p-value = 0 means this result is highly significant - it’s not due to random chance.
+
+The confidence interval (0.34 to 0.38) is narrow and fully positive → this strengthens our confidence.
+
+As age increases, the chance of having cardiovascular disease (CVD) also increases.
+
+```{r}
+#1
+scottish_CVD_df %>%
+  drop_na(age, carstair, cvddef) %>%
+  gf_point(carstair ~ age | cvddef, colour = ~cvddef) %>%
+  gf_smooth(method = "lm", colour = "black") %>%
+  gf_labs(
+    title = "Age vs Deprivation by CVD Status",
+    subtitle = "Older and more deprived individuals show higher CVD presence",
+    x = "Age (years)",
+    y = "Carstairs Index"
+  )
+```
+```{r}
+mosaic::cor_test(as.numeric(cvddef) ~ carstair, data = scottish_CVD_df)
+```
+```{r}
+mosaic::cor_test(as.numeric(cvddef) ~ carstair, data = scottish_CVD_df) %>%
+  broom::tidy() %>%
+  knitr::kable(
+    digits = 3,
+    caption = "Correlation between CVD and Carstairs Index"
+  )
+##remove
+```
+
+```{r}
+scottish_CVD_df <- scottish_CVD_df %>%
+  mutate(smoke_num = as.numeric(smoke))  # nevr=1, mod=2, ex=3, hvy=4
+
+mosaic::cor_test(as.numeric(cvddef) ~ smoke_num, data = scottish_CVD_df) %>%
+  broom::tidy() %>%
+  knitr::kable(
+    digits = 3,
+    caption = "Correlation between Smoking and CVD"
+  )
+##remove
+```
+
+```{r}
+scottish_CVD_df <- scottish_CVD_df %>%
+  mutate(sex_num = as.numeric(sex))  # female=1, male=2
+
+mosaic::cor_test(age ~ sex_num, data = scottish_CVD_df) %>%
+  broom::tidy() %>%
+  knitr::kable(
+    digits = 3,
+    caption = "Correlation between Age and Sex"
+  )
+##remove
+```
+
+```{r}
+scottish_CVD_df <- scottish_CVD_df %>%
+  mutate(smoke_num = recode(smoke,
+                            "nevr" = 0,
+                            "ex"   = 1,
+                            "mod"  = 2,
+                            "hvy"  = 3))
+mosaic::cor_test(smoke_num ~ age, data = scottish_CVD_df) %>%  
+  broom::tidy() %>%
+  knitr::kable(
+    digits = 3,
+    caption = "Correlation between Age and Sex")
+##remove
+```
+```{r}
+#2
+scottish_CVD_df %>% 
+  gf_boxplot(age ~ smoke, orientation = "x", fill = ~smoke, color = "black") %>%
+  gf_labs(
+    y = "Smoking Status",
+    x = "Age of Individuals", 
+    title = "Distribution of Age by Smoking Status",
+    subtitle = "Checking if smoking habits vary by age"
+  )
+
+```
+```{r}
+#3 
+
+mosaic::cor_test(carstair ~ smoke_num, data = scottish_CVD_df) %>%
+  broom::tidy() %>%
+  knitr::kable(
+    digits = 3,
+    caption = "Correlation between Deprivation and Smoking"
+  )
+```
+

@@ -1,5 +1,8 @@
 ---
 title: "Canadian Wages"
+author: Meenakshi
+categories: Assessment 1
+format: html
 ---
 
 ## Setup R Packages

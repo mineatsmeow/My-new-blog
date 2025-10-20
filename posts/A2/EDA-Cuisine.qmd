@@ -1,0 +1,316 @@
+---
+title: "EDA-Education"
+author: "Shruthi Challa"
+---
+
+```{r}
+#Setup
+library(tidyverse)
+library(mosaic) # Our trusted friend
+library(skimr)
+library(ggformula) # Formula interface to ggplot2
+library(vcd) # Michael Friendly's package, Visualizing Categorical
+library(vcdExtra) # Categorical Data Sets
+library(resampledata) # More datasets
+library(visStatistics) # Comprehensive all-in-one stats viz/test package
+library(ggmosaic) # Tidy Mosaic Plots
+library(ggpubr) # Colours, Themes and new geometries in ggplot
+##
+library(GGally) # Corr plots
+library(broom) # Clean reports from Stats / ML outputs
+
+# library(devtools)
+# devtools::install_github("rpruim/Lock5withR")
+library(easystats) # Easy Statistical Analysis and Charts
+library(correlation) # Different Types of Correlations
+##
+library(janitor) # Data Cleaning and Tidying
+library(visdat) # Visualize whole dataframes for missing data
+library(naniar) # Clean missing data
+library(DT) # Interactive Tables for our data
+library(tinytable) # Elegant Tables for our data
+library(ggrepel) # Repelling Text Labels in ggplot
+library(marquee) # Marquee Text in ggplot
+##
+library(CardioDataSets)
+library(DataSetsVerse)
+library(tastyR)
+```
+
+```{r}
+data(package = "tastyR")
+```
+
+```{r}
+#Getting the Data
+class(cuisines)
+cuisines
+```
+
+```{r}
+#Inspecting the Data
+base::names(cuisines)
+dplyr::glimpse(cuisines)
+base::dim(cuisines)
+utils::str(cuisines)
+```
+```{r}
+#Raw data visualization
+visdat::vis_dat(cuisines)
+```
+
+
+```{r}
+#Cleaning the Data
+cuisines_modified <- cuisines %>%
+  janitor::clean_names(case = "snake") # clean names
+
+cuisines_modified
+```
+
+```{r}
+cuisines_clean <- cuisines_modified %>% 
+tidyr::drop_na()
+cuisines_clean
+```
+
+```{r}
+cuisines_clean %>% 
+  naniar::replace_with_na_all(condition = ~ .x %in% common_na_numbers) %>%
+  replace_with_na_all(condition = ~ .x %in% common_na_strings)
+cuisines_clean
+```
+
+```{r}
+visdat::vis_dat(cuisines_clean)
+```
+```{r}
+#Data Munging
+cuisines_clean %>%
+  mutate(
+    name = as.factor(name),
+    country = as.factor(country),
+    url = as.factor(url),
+    author = as.factor(author)
+  ) %>%
+
+  # Arrange the Qual variables first, Quant next
+  dplyr::relocate(where(is.factor), .after = name)
+
+glimpse(cuisines_clean)
+```
+
+```{r}
+cuisines_clean %>%
+  head(10) %>%
+  tinytable::tt(caption = "Cuisines Dataset (Clean)") %>%
+  tinytable::theme_html(class = "table table-hover table-striped table-condensed") %>%
+  style_tt(fontsize = 0.8) %>%
+  stats::setNames(c("Dish Name", "Country", "URL", "Author", "Date Published", "Ingredients", "Calories", "Fat", "Carbs", "Protein", "Avg Rating", "Total Ratings", "Reviews", "Prep Time", "Cook Time", "Total Time", "Servings"))
+```
+
+```{r}
+#Summarizing the Data
+cuisines_clean %>% 
+  mosaic::inspect()
+```
+
+```{r}
+#Summarizing the Data
+cuisines_clean %>% 
+  dplyr::count(country) %>%
+  tt()
+```
+
+```{r}
+# Single Variable, Multiple Summaries
+cuisines_clean %>%
+  dplyr::summarise(
+        mean_fat = mean(fat, na.rm = T),
+    sd_fat = sd(fat, na.rm = T),
+    min_fat = min(fat, na.rm = T),
+    max_fat = max(fat, na.rm = T)
+  )
+```
+#Playing with Graphs
+##What is the most popular time of the year when the most recepies are released?
+```{r}
+##Distribution of dishes across Countries
+cuisines_clean %>% 
+  gf_bar(~country)
+```
+
+```{r}
+cuisines_clean %>%
+  count(calories) %>%
+  arrange(desc(calories)) %>%
+  top_n(3, n)
+```
+
+```{r}
+##Average calorie content of dishes significantly differs across countries
+cuisines_clean %>% 
+gf_bar(~ calories | country, data = cuisines_clean) %>%
+  gf_labs(
+    title = "Plot 1: Average Colorie content of dishes group by country",
+    subtitle = "Facetted by Country"
+  ) %>% 
+  gf_refine(scale_fill_brewer(palette = "-Set1"))
+```
+```{r}
+##Average calorie & fat content of dishes significantly differs across countries
+cuisines_clean %>% 
+gf_point(fat~ calories | country, data = cuisines_clean) %>%
+  gf_labs(
+    title = "Plot 2: Average Colorie & fat content of dishes",
+    subtitle = "Facetted by Country"
+  ) %>% 
+  gf_refine(scale_fill_brewer(palette = "-Set1"))
+```
+```{r}
+cor <- correlation::correlation(cuisines_clean)
+cor
+```
+
+```{r}
+mosaic::cor_test(calories ~ protein, data = cuisines_clean) %>%
+  broom::tidy() %>%
+  knitr::kable(
+    digits = 3,
+    caption = "Movie profitability vs budget"
+  )
+```
+
+
+
+```{r}
+##High-protein dishes tend to have higher calorie counts
+cuisines_clean %>% 
+gf_point(protein ~ calories, data = cuisines_clean) %>%
+   gf_lm() %>%
+  gf_labs(
+    title = "Plot 3: Do High protein dishes have higher calories",
+    ##subtitle = "Facetted by Country"
+  ) %>% 
+  gf_refine(scale_fill_brewer(palette = "Set1"))
+```
+
+
+```{r}
+##carbohydrate-heavy dishes might take longer to prepare
+cuisines_clean %>% 
+  gf_point(carbs ~ total_time, data = cuisines_clean) %>%
+   gf_lm() %>%
+  gf_labs(
+    title = "Plot 4: Carb high meals should take a longer time to prepare",
+    ##subtitle = "Facetted by Country"
+  ) %>% 
+  gf_refine(scale_fill_brewer(palette = "-Set1"))
+```
+```{r}
+##Seeing if higher calorie dishes tend to have a higher average rating
+cuisines_clean %>% 
+  gf_point(avg_rating ~ calories, data = cuisines_clean) %>%
+   gf_lm() %>%
+  gf_labs(
+    title = "Plot 5: Do higher calories mean a better rating?",
+    ##subtitle = "Facetted by Country"
+  ) %>% 
+  gf_refine(scale_fill_brewer(palette = "-Set1"))
+```
+```{r}
+##Dishes that take longer to prepare have lower ratings due to effort required
+cuisines_clean %>%
+  drop_na() %>%
+  gf_point(total_time ~ avg_rating | country,
+    ##color = ~country
+  ) %>%
+  gf_lm() %>%
+  gf_labs(
+    title = "Plot 6: Dishes that take longer to prepare have lower ratings due to effort required",
+  )
+```
+```{r}
+##“Total Ratings” differ significantly across countries — indicating regional differences in user engagement
+cuisines_clean %>% 
+gf_bar(~total_ratings, color = ~country, data = cuisines_clean) %>%
+   ##gf_lm() %>%
+  gf_labs(
+    title = "Plot 7: Which country has the highest user engagement?",
+    ##subtitle = "Facetted by Country"
+  ) %>% 
+  gf_refine(scale_fill_brewer(palette = "Set1"))
+
+```
+```{r}
+##Dishes by certain “Authors” (e.g., professional chefs vs. users) receive higher average ratings
+cuisines_clean %>% 
+gf_point(total_ratings ~ author, data = cuisines_clean) %>%
+   ##gf_lm() %>%
+  gf_labs(
+    title = "Plot 8: Some authors have more user engagement than others",
+    ##subtitle = "Facetted by Country"
+  ) %>% 
+  gf_refine(scale_fill_brewer(palette = "Set1"))
+
+```
+```{r}
+cuisines_clean %>% 
+gf_point(prep_time ~ cook_time | country, data = cuisines_clean) %>%
+   ##gf_lm() %>%
+  gf_labs(
+    title = "Plot 9",
+    ##subtitle = "Facetted by Country"
+  ) %>% 
+  gf_refine(scale_fill_brewer(palette = "Set1"))
+```
+```{r}
+##“Prep Time” and “Cook Time” are strongly correlated (complex dishes take long both to prep and cook)
+cuisines_clean %>% 
+gf_point(prep_time ~ cook_time,color = ~country, data = cuisines_clean) %>%
+   ##gf_lm() %>%
+  gf_labs(
+    title = "Plot 10: Prep time vs. Cook Time",
+    ##subtitle = "Facetted by Country"
+  ) %>% 
+  gf_refine(scale_fill_brewer(palette = "Set1"))
+```
+```{r}
+##total time vs. reviews, we should see a general regression as time to cook a meal increases.
+cuisines_clean %>% 
+gf_point(reviews ~ total_time, data = cuisines_clean) %>%
+   gf_lm() %>%
+  gf_labs(
+    title = "Plot 11:Total time vs. Reviews",
+    ##subtitle = "Facetted by Country"
+  ) %>% 
+  gf_refine(scale_fill_brewer(palette = "Set1"))
+```
+
+```{r}
+#filtering and graphing with Indian Cuisine
+cuisines_indian <- cuisines_clean %>% 
+filter(country == "Indian")
+cuisines_indian
+```
+```{r}
+cuisines_indian %>% 
+gf_point(prep_time~cook_time, position = "stack") %>% 
+  gf_lm() %>%
+    gf_labs(
+    title = "Plot 12:Indian Prep Time vs. Cook Time",
+    ##subtitle = "Facetted by Country"
+  ) %>% 
+  gf_refine(scale_fill_brewer(palette = "Set1"))
+```
+
+```{r}
+#Notes
+##There’s a relationship between “Ingredients” count and “Avg Rating” — more complex recipes may be rated higher
+##“Avg Rating” has increased/decreased over time (“Date Published”).
+##Recently published dishes receive more “Total Ratings” (recency bias).
+##Average “Calories” or “Fat” in dishes has declined over time — reflecting health trends
+```
+
+
+

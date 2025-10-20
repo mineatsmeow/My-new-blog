@@ -1,5 +1,8 @@
 ---
 title: "Fertility"
+author: Meenakshi
+categories: Assessment 1
+format: html
 ---
 
 ## Setup R Packages
@@ -23,6 +26,7 @@ fertility <- readr::read_csv("Data/Fertility.csv")
 ```
 
 ## Viewing the Data
+
 ```{r}
 glimpse(fertility)
 ```
@@ -37,10 +41,10 @@ fertility_modified
 ```
 
 ## Dropping NA
+
 ```{r}
 tidyr::drop_na(fertility_modified)
 ```
-
 
 ## Missing data
 
@@ -67,6 +71,7 @@ visdat::vis_dat(fertility_sample, sort_type = TRUE, palette = "cb_safe") +
 ```
 
 ## Table Captioning (Title)
+
 ```{r}
 fertility_sample %>%
   head(10) %>%
@@ -75,7 +80,6 @@ fertility_sample %>%
   stats::setNames(c("Row ID", "More Kids", "Gender 1", "Gender 2", "Age", "African American", "Hispanic", "Other", "Work"))
 
 ```
-
 
 ## Gender by work status
 
@@ -91,7 +95,6 @@ fertility_sample %>%
   gf_refine(scale_fill_brewer(palette = "Spectral"))
 
 ```
-
 
 ## Count of more kids by ages
 
@@ -109,7 +112,6 @@ fertility_sample %>%
 
 ```
 
-
 ## Bar Chart of More Kids by Age Group
 
 ```{r}
@@ -125,7 +127,6 @@ fertility_sample %>%
   gf_labs(title = "Plot 2A: Dodged Bar Chart of More Kids by Age Group") %>%
   gf_refine(scale_fill_brewer(palette = "Spectral"))
 ```
-
 
 ## Distribution of Age in Fertility Dataset
 
@@ -173,11 +174,3 @@ dplyr::count(fertility_sample)
 dplyr::summarise(fertility_sample)
 crosstable::crosstable(fertility_sample)
 ```
-
-
-
-
-
-
-
-

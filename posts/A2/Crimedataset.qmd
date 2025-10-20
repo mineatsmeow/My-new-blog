@@ -1,0 +1,451 @@
+---
+title: "Crime Data Set"
+author: Meenakshi
+date: "2025-10-13"
+categories: Assessment 2
+description: EDA of the "crimedataset"
+format: html
+---
+
+# Homicide in Nine US Cities (2015)
+
+In 2015, homicide rates in nine major U.S. cities showed a worrying increase following years of decline. Cities such as Chicago, St. Louis, Detroit, and New Orleans experienced significant rises in the number of killings, with some cities reporting rates higher than the national average. This increase was often linked to exacerbated social tensions, economic challenges, and an uptick in gun violence. The data reflects a complex interplay of factors including policing policies, community relations, and socio-economic conditions influencing these urban crime trends. This period marked a pivotal moment highlighting the need for focused crime prevention strategies in these metropolitan areas.
+
+------------------------------------------------------------------------
+
+## 🖥️ Setting up R Packages
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(dplyr)
+library(naniar)
+library(skimr)
+library(crosstable)
+library(tinytable)
+library(ggformula)
+library(mosaic)
+library(tidyverse)
+library(vcd)
+library(vcdExtra) 
+library(resampledata)
+library(ggmosaic)
+library(ggpubr) 
+library(visdat)
+library(naniar) 
+library(DT)
+library(ggrepel)
+library(marquee)
+library(rnaturalearth)
+
+library(crimedatasets)
+library(DataSetsVerse)
+```
+
+## Reading Data
+
+```{r}
+data(package = "crimedatasets")
+```
+
+```{r}
+data("homicides15_tbl_df", package = "crimedatasets")
+dplyr::glimpse(homicides15_tbl_df)
+```
+
+## 🔍 Examine Data
+
+```{r}
+base::names(homicides15_tbl_df)
+dplyr::glimpse(homicides15_tbl_df)
+base::dim(homicides15_tbl_df)
+utils::str(homicides15_tbl_df)
+
+```
+
+## ❌ Removing NA
+
+```{r}
+homicides15_tbl_df <- homicides15_tbl_df %>% 
+ tidyr::drop_na()
+```
+
+## Viewing Missing Data
+
+```{r}
+visdat::vis_dat(homicides15_tbl_df)
+```
+
+```{r}
+visdat::vis_miss(homicides15_tbl_df)
+```
+
+## Replace common NA strings and numbers with actual NA
+
+```{r}
+homicides15_tbl_df_modified <- homicides15_tbl_df %>%
+  naniar::replace_with_na_all(data = ., condition = ~ .x %in% common_na_numbers) %>%
+  naniar::replace_with_na_all(data = ., condition = ~ .x %in% common_na_strings) 
+glimpse(homicides15_tbl_df_modified)
+```
+
+## 👾 Data Cleaned
+
+```{r}
+homicides15_tbl_df_modified %>%
+  head(10) %>%
+  stats::setNames(c("UID", "City Name", "Offense Code", "Offense Type", "Date Single", "Address", "Longitude", "Latitude", "Location Type", "Location Category", "FIPS State", "FIPS County", "Tract", "Block Group", "Block")) %>% 
+  
+    DT::datatable(
+    caption = htmltools::tags$caption(
+      style = "caption-side: top; text-align: left; color: blue; font-size: 150%",
+      "Homicides in Nine US Cities (2015)"
+    ),
+    options = list(pageLength = 10, autoWidth = TRUE)
+  ) %>%
+  DT::formatStyle(
+    columns = names(c("UID", "City Name", "Offense Code", "Offense Type", "Date Single", "Address", "Longitude", "Latitude", "Location Type", "Location Category", "FIPS State", "FIPS County", "Tract", "Block Group", "Block")),
+    fontFamily = "Georgia",
+    fontSize = "12px",
+    color = "black"
+  ) 
+```
+
+## Converting to a Factor
+
+```{r}
+homicides15_tbl_df_cleaned <- homicides15_tbl_df_modified %>%
+  mutate(across(where(is.character), as.factor)) %>% 
+  relocate(where(is.factor))
+glimpse(homicides15_tbl_df_cleaned)
+```
+
+## Current Status of Variable
+
+```{r}
+homicides15_tbl_df_cleaned
+```
+
+## Checking my Quant Variables
+
+```{r}
+homicides15_tbl_df_quant <- homicides15_tbl_df_cleaned %>%
+  drop_na() %>%
+  select(where(is.numeric))
+homicides15_tbl_df_quant %>% names()
+```
+
+## Drawing a relationship between `UID` and `Block`
+
+```{r}
+
+mosaic::cor_test(uid ~ block, data = homicides15_tbl_df_cleaned) %>%
+  broom::tidy() %>%
+  knitr::kable(
+    digits = 3,
+    caption = "Correlation between Block and UID"
+  )
+
+```
+
+## Drawing a relationship between `longitude` and `latitude`
+
+```{r}
+
+mosaic::cor_test(longitude ~ latitude, data = homicides15_tbl_df_cleaned) %>%
+  broom::tidy() %>%
+  knitr::kable(
+    digits = 3,
+    caption = "Correlation between Longitude and Latitude"
+  )
+
+```
+
+## Drawing a relationship between `fips_state` and `block_group`
+
+```{r}
+
+mosaic::cor_test(fips_state ~ block_group, data = homicides15_tbl_df_cleaned) %>%
+  broom::tidy() %>%
+  knitr::kable(
+    digits = 3,
+    caption = "Correlation between fips_state and block_group"
+  )
+
+```
+
+## Offense Type by FIPS County status
+
+```{r}
+
+homicides15_tbl_df_cleaned %>%
+  gf_bar(~offense_type, fill = ~fips_county, position = "dodge") %>%
+  gf_labs(title = "Plot 1A: Dodged Bar Chart of Offense Type by FIPS County") %>%
+  gf_theme(theme(axis.text.x = element_text(
+    size = 6,
+    angle = 45, hjust = 0.5
+  ))) %>%
+  gf_refine(scale_fill_brewer(palette = "Spectral"))
+
+```
+
+## Distribution of Crime based off of Block Group (Density of an Area)
+
+```{r}
+
+gf_histogram(~block_group, data = homicides15_tbl_df_cleaned, bins = 20, color = "darkgreen", fill = "skyblue") %>%
+  gf_labs(title = "Distribution of Crime based off of Block Group (Density of an Area)", x = "Block Group", y = "Count")
+
+```
+
+## Crime Count by Location Category
+
+```{r}
+gf_bar(~location_category, data = homicides15_tbl_df_cleaned, fill = ~location_category) %>%
+  gf_labs(title = "Crime Count by Location Category", x = "Location Category", y = "Count")
+
+```
+
+## Crime Count by City
+```{r}
+
+gf_bar(~city_name, data = homicides15_tbl_df_cleaned, fill = ~city_name) %>%
+  gf_labs(title = "Crime Count by City", x = "City Name", y = "Count")
+```
+
+## Location and Datewise Count
+
+```{r}
+
+gf_boxplot(location_type ~ date_single, data = homicides15_tbl_df_cleaned, fill = ~location_type, orientation = "y") %>%
+  gf_labs(title = "Location and Datewise Count", x = "Dates", y = "Location Type")
+
+```
+
+------------------------------------------------------------------------
+
+# Summaries: Examining the Data
+
+```{r}
+homicides15_tbl_df_cleaned %>%
+  count(city_name, offense_type) %>%
+  arrange(desc(n))
+```
+
+```{r}
+homicides15_tbl_df_cleaned %>%
+  count(location_type) %>%
+  arrange(desc(n))
+```
+
+```{r}
+ls()
+names(homicides15_tbl_df_cleaned)
+```
+
+```{r}
+  homicides15_tbl_df_cleaned %>%
+    dplyr::summarise(
+      median_year = median(year(date_single), na.rm=TRUE),
+      mean_hour = mean(hour(date_single), na.rm=TRUE),
+      sd_hour = sd(hour(date_single), na.rm=TRUE)
+    )
+```
+
+```{r}
+homicides15_tbl_df_cleaned <- homicides15_tbl_df_cleaned %>%
+  mutate(
+    year = year(date_single),
+    month = month(date_single, label = TRUE, abbr = TRUE),  # gives Jan, Feb, Mar...
+    day = day(date_single),
+    hour = hour(date_single)
+  )
+homicides15_tbl_df_cleaned
+```
+
+```{r}
+glimpse(homicides15_tbl_df_cleaned)
+```
+
+# Quant Quant \### 1 latitude vs longitude \# Hypothesis: Homicides are not randomly spread — there’s a relationship between latitude and longitude.
+
+```{r}
+mosaic::cor_test(latitude ~ longitude, data = homicides15_tbl_df_cleaned) %>%
+  broom::tidy() %>%
+  knitr::kable(
+    digits = 3,
+    caption = "Correlation between latitude and longitude"
+  )
+```
+
+```{r}
+homicides_counts <- homicides15_tbl_df_cleaned %>%
+  dplyr::count(longitude, latitude, name = "count")
+
+homicides_counts
+```
+
+```{r}
+homicides_counts %>%
+  gf_point(latitude ~ longitude, size = ~ count, color = ~count) %>%
+  gf_labs(
+    title = "Homicide Heatmap by Latitude and Longitude",
+    subtitle = "Point size shows number of homicides",
+    x = "Longitude",
+    y = "Latitude",
+    size = "Number of Cases"
+  )
+```
+
+```{r}
+library(sf)
+library(rnaturalearth)
+
+usa <- ne_countries(scale = "medium", returnclass = "sf") %>%
+  filter(iso_a3 == "USA")
+
+
+gf_sf(usa, fill = "grey", color = "black") %>%
+  gf_point(data = homicides_counts, x = ~longitude, y = ~latitude, color = "red") %>%
+  gf_labs(
+    title = "Homicide Locations in the USA",
+    x = "Longitude",
+    y = "Latitude"
+  )
+
+```
+
+```{r}
+homicides_counts %>%
+  gf_density(~latitude, color = "purple", fill = "violet") %>%
+  gf_labs(
+    title = "Distribution of Homicide Latitude",
+    subtitle = "Density of Homicide Locations across USA",
+    x = "Latitude",
+    y = "Density"
+  )
+
+homicides_counts %>%
+  gf_density(~longitude, color = "blue", fill = "lightblue") %>%
+  gf_labs(
+    title = "Distribution of Homicide Longitute",
+    subtitle = "Density of Homicide Locations across USA",
+    x = "Longitude",
+    y = "Density"
+  )
+
+```
+
+## Inferences?
+
+## 2 block vs block_group
+
+## Hypothesis:.
+
+```{r}
+mosaic::cor_test(block ~ block_group, data = homicides15_tbl_df_cleaned) %>%
+  broom::tidy() %>%
+  knitr::kable(
+    digits = 3,
+    caption = "Correlation between block and block_group"
+  )
+
+```
+
+```{r}
+homicides15_tbl_df_cleaned %>%
+  drop_na(block, block_group) %>%
+  gf_point(block_group ~ block, position = "jitter") %>%
+  gf_smooth()
+```
+
+```{r}
+homicides_block_counts <- homicides15_tbl_df_cleaned %>%
+  drop_na(block, block_group, city_name) %>%
+  count(city_name, block, block_group, name = "homicide_count")
+
+homicides_block_counts
+```
+
+```{r}
+gf_point(
+  block_group ~ block | city_name,
+  data = homicides_block_counts,
+  color = "darkred",
+  size = ~homicide_count
+) %>%
+  gf_labs(
+    title = "Homicide Concentration -  Block and Block Group",
+    subtitle = "size show number of homicides",
+    x = "block",
+    y = "block group",
+    size = "Number of Homicides"
+  )
+
+```
+
+## Date - Homicide
+
+```{r}
+gf_bar(~month, data = homicides15_tbl_df_cleaned, fill = ~location_type) %>%
+  gf_facet_wrap(~city_name) %>%
+  gf_labs(
+    title = "Homicides by Month, Year, and Location",
+    x = "Month",
+    y = "Count",
+    fill = "Year"
+  )
+```
+
+```{r}
+gf_density(~hour, data = homicides15_tbl_df_cleaned, fill = ~month) %>%
+  gf_labs(
+    title = "Distribution of Homicides by Hour",
+    x = "Hour of the Day",
+    y = "Density"
+  )
+```
+
+```{r}
+gf_bar(~month, data = homicides15_tbl_df_cleaned, fill = ~location_category, position = "dodge") %>%
+  gf_labs(
+    title = "Homicides by Month and Location Type",
+    x = "Month",
+    y = "Count",
+    fill = "Location"
+  )
+```
+
+```{r}
+gf_bar(~month, data = homicides15_tbl_df_cleaned, fill = ~location_category, , position = "fill") %>%
+  gf_labs(
+    title = "Homicides by Month and Location Type",
+    x = "Month",
+    y = "Count",
+    fill = "Location"
+  )
+```
+
+## Qual Mosaic Plot
+
+```{r}
+vcd::structable(city_name ~ location_type, data = homicides15_tbl_df_cleaned) %>%
+  vcd::mosaic(
+    gp = shading_Friendly2(),
+    main = "Mosaic Plot: Homicide Location Type by City"
+  )
+
+
+```
+
+## Qual Mosaic Plot
+
+```{r}
+vcd::structable(address ~ offense_type, data = homicides15_tbl_df_cleaned) %>%
+  vcd::mosaic(
+    gp = shading_Friendly2(),
+    main = "Mosaic Plot: Homicide Offense Type by Location"
+  )
+
+
+```

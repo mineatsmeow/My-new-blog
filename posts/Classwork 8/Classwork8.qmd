@@ -1,0 +1,102 @@
+---
+title: "Classwork 8"
+author: Meenakshi
+categories: Classwork
+format: html
+---
+
+## SetUp R Packages
+
+```{r}
+library(tidyverse) # Data Processing in R
+library(mosaic) # Our workhorse for stats, sampling
+library(janitor) # Data Cleaning
+library(skimr) # Good to Examine data
+library(ggformula) # Formula interface for graphs
+
+# load the NHANES data library
+library(NHANES)
+library(infer)
+```
+
+## Data Set
+
+```{r}
+data("NHANES")
+```
+
+## Taking a Sample
+
+Taking all the Data only from the category [height]{.underline} and then viewing it.
+
+```{r}
+NHANES_adult <-
+  NHANES %>%
+  distinct(ID, .keep_all = TRUE) %>%
+  filter(Age >= 18) %>%
+  select(Height) %>%
+  drop_na(Height)
+NHANES_adult %>% glimpse()
+```
+
+## Population parameters for "Height"
+
+The parameters here being standard deviation and mean.
+
+```{r}
+# NHANES_adult is assumed population
+pop_mean <- mosaic::mean(~Height, data = NHANES_adult)
+pop_sd <- mosaic::sd(~Height, data = NHANES_adult)
+pop_mean
+pop_sd
+```
+
+## Sampling
+
+Comparing sample statistics with population parameters on the basis of this ONE sample of 50.
+
+```{r}
+set.seed(12345) # for reproducibility
+sample_50 <- mosaic::sample(NHANES_adult, size = 50) %>%
+  select(Height)
+sample_50
+sample_mean_50 <- mean(~Height, data = sample_50)
+sample_mean_50
+# Plotting the histogram of this sample
+ggplot2::theme_set(new = theme_classic())
+sample_50 %>%
+  gf_histogram(~Height, bins = 10) %>%
+  gf_vline(
+    xintercept = ~sample_mean_50,
+    color = "purple"
+  ) %>%
+  gf_vline(
+    xintercept = ~pop_mean,
+    colour = "black"
+  ) %>%
+  gf_annotate("label",
+    y = 7, x = pop_mean - 8,
+    label = "Population Mean",
+    color = "black"
+  ) %>%
+  gf_annotate("label",
+    y = 7, x = sample_mean_50 + 8,
+    label = "Sample Mean", color = "purple"
+  ) %>%
+  gf_annotate("curve",
+    x = sample_mean_50 + 8, y = 6.5,
+    xend = sample_mean_50 + 1, yend = 2,
+    curvature = -0.2, color = "purple",
+    arrow = arrow(length = unit(0.5, "cm"))
+  ) %>%
+  gf_annotate("curve",
+    x = pop_mean - 8, y = 6.5,
+    xend = pop_mean - 1, yend = 2,
+    curvature = 0.2, color = "black", arrow = arrow(length = unit(0.5, "cm"))
+  ) %>%
+  gf_labs(
+    y = "Frequency",
+    title = "Distribution and Mean of a Single Sample",
+    subtitle = "Sample Size = 50"
+  )
+```

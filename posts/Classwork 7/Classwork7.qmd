@@ -1,0 +1,137 @@
+---
+title: "Classwork 7"
+author: Meenakshi
+categories: Classwork
+format: html
+---
+
+```{r}
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+# Run this in your console first
+# devtools::install_github("ropensci/rnaturalearthhires")
+library(rnaturalearthhires)
+
+# Plotting Maps
+library(tidyverse) # Maps using ggplot() + geom_sf()
+library(ggformula) # Maps using gf_sf()
+library(tmap) # Thematic Maps, static and interactive
+library(tmaptools)
+library(tmap.mapgl)
+library(osmdata) # Fetch map data from osmdata.org
+library(sfheaders) # Handcrafted Map data
+## Interactive Maps
+library(leaflet) # interactive Maps
+library(leaflet)
+library(leaflet.providers)
+library(leaflet.extras)
+library(threejs) # Globe maps in R. Part of the htmlwidgets family of packages
+
+# For Spatial Data Frame Processing
+library(sf)
+```
+
+```{r}
+# https://boundingbox.klokantech.com CSV:
+# 77.5698943332,13.0023482626,77.5707008395,13.0030834999
+bbox_1 <- matrix(c(77.5698943332,13.0023482626,77.5707008395,13.0030834999), byrow = FALSE, nrow = 2,
+    ncol = 2, dimnames = list(c("x", "y"), c("min", "max")))
+bbox_1
+```
+
+```{r}
+# Using getbb command from the osmdata package
+bbox_2 <- osmdata::getbb("Malleswaram, Bangalore, India")
+bbox_2
+```
+
+```{r}
+#|eval: false
+# This code is for reference
+# Run these commands ONCE in your Console
+# Or run this chunk manually one time
+# Re-run ONLY if you change your bounding box
+
+# Get all restaurants, atms, colleges within my bbox
+locations <- 
+  osmdata::opq(bbox = bbox_2) %>% 
+  osmdata::add_osm_feature(key = "amenity", 
+                           value = c("restaurant", "atm", "college")) %>% 
+  osmdata_sf() %>%  # Convert to Simple Features format
+  purrr::pluck("osm_points") # Pull out the data frame of interest
+
+# Get all buildings within my bbox
+dat_buildings <-
+  osmdata::opq(bbox = bbox_2) %>% 
+  osmdata::add_osm_feature(key = "building") %>% 
+  osmdata_sf() %>% 
+  purrr::pluck("osm_polygons") 
+
+# Get all residential roads within my bbox
+dat_roads <- 
+  osmdata::opq(bbox = bbox_2) %>% 
+  osmdata::add_osm_feature(key = "highway") %>% 
+  osmdata_sf() %>% 
+  purrr::pluck("osm_lines") 
+
+# Get all parks / natural /greenery areas and spots within my bbox
+dat_natural <-   
+  osmdata::opq(bbox = bbox_2) %>% 
+  osmdata::add_osm_feature(key = "natural",
+                           value = c("tree", "water", "wood")) %>% 
+  osmdata_sf()
+dat_natural
+
+dat_trees <- 
+  dat_natural %>% 
+  purrr::pluck("osm_points") 
+
+dat_greenery <- 
+  dat_natural %>% pluck("osm_polygons")
+ 
+```
+
+```{r}
+sf::st_write(dat_roads, dsn = "Data/roads.gpkg", 
+         append = FALSE, quiet = FALSE)
+
+sf::st_write(dat_buildings, 
+         dsn = "Data/buildings.gpkg", 
+         append = FALSE, 
+         quiet = FALSE)
+
+sf::st_write(dat_greenery, dsn = "Data/greenery.gpkg", 
+         append = FALSE,quiet = FALSE)
+
+sf::st_write(dat_trees, dsn = "Data/trees.gpkg", 
+         append = FALSE,quiet = FALSE)
+```
+
+## Reading it back in
+
+```{r}
+
+roads <- st_read("Data/roads.gpkg")
+trees <- st_read("Data/trees.gpkg")
+buildings <- st_read("Data/buildings.gpkg")
+greenery <- st_read("Data/greenery.gpkg")
+```
+
+```{r}
+roads
+trees
+buildings
+greenery
+```
+
+## My First Map
+
+```{r}
+gf_sf(data = buildings, geometry =~geom, fill = "darkgreen") %>% 
+  gf_sf(data = roads, geometry =~geom, color = "skyblue", linewidth = 0.3) %>% 
+  gf_sf(data = trees, geometry =~geom, color = "gray") %>% 
+  gf_sf(data = greenery, geometry =~geom, fill = "red") %>% 
+
+  gf_theme(theme_dark())
+```

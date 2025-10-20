@@ -1,0 +1,187 @@
+---
+title: "Classwork 5"
+author: Meenakshi
+categories: Classwork
+format: html
+---
+
+## SetUp R Packages
+
+```{r}
+library(tidyverse) # Tidy data processing and plotting
+library(ggformula) # Formula based plots
+library(ggplot2)
+library(mosaic) # Our go-to package
+library(skimr) # Another Data inspection package
+
+library(GGally) # Corr plots
+library(broom) # Clean reports from Stats / ML outputs
+
+# library(devtools)
+# devtools::install_github("rpruim/Lock5withR")
+library(Lock5withR) # Datasets
+
+library(easystats) # Easy Statistical Analysis and Charts
+library(correlation) # Different Types of Correlations
+
+library(janitor) # Data cleaning and tidying package
+library(visdat) # Visualize whole dataframes for missing data
+library(naniar) # Clean missing data
+library(DT) # Interactive Tables for our data
+library(tinytable) # Elegant Tables for our data
+library(ggrepel) # Repelled Text Labels in ggplot
+library(marquee) # Marquee Text Labels in ggplot
+```
+
+## Read the Data
+
+```{r}
+movies_modified <- read_csv("movies_modified.csv")
+```
+
+## Data Munging
+
+```{r}
+data(HollywoodMovies2011, package = "Lock5withR")
+movies_modified <- HollywoodMovies2011 %>%
+  janitor::clean_names(case = "snake") %>%
+  janitor::remove_empty(which = c("rows", "cols")) %>%
+  dplyr::mutate(
+    across(where(is.character), as.factor)
+  ) %>%
+  dplyr::relocate(where(is.factor))
+```
+
+## Viewing the Data
+
+```{r}
+glimpse(movies_modified)
+```
+
+## Scatter Plots
+
+```{r}
+movies_quant <- movies_modified %>%
+  drop_na() %>%
+  select(where(is.numeric))
+movies_quant %>% names()
+```
+
+## Number 1
+
+```{r}
+ggplot2::theme_set(new = theme_classic())
+
+movies_modified %>%
+  drop_na() %>%
+  gf_point(profitability ~ budget) %>%
+  gf_lm() %>%
+  gf_labs(
+    title = "Profitability vs budget",
+    subtitle = "Movie profitability: Does budget affect profitability?"
+  )
+```
+
+## Number 2
+
+```{r}
+ggplot2::theme_set(new = theme_classic())
+
+movies_modified %>%
+  drop_na() %>%
+  gf_point(profitability ~ opening_weekend) %>%
+  gf_lm() %>%
+  gf_labs(
+    title = "Profitability vs Opening Weekend",
+    subtitle = "Movies: Does Opening Week Earnings indicate profitability?"
+  )
+```
+
+## Number 3
+
+```{r}
+ggplot2::theme_set(new = theme_classic())
+
+movies_modified %>%
+  drop_na() %>%
+  gf_point(profitability ~ rotten_tomatoes) %>%
+  gf_lm() %>%
+  gf_labs(
+    title = "Profitability vs Rotten Tomatoes",
+    subtitle = "Movie Ratings: Does Rotten Tomatoes affect profitability?"
+  )
+```
+
+## Number 4
+
+```{r}
+ggplot2::theme_set(new = theme_classic())
+
+movies_modified %>%
+  drop_na() %>%
+  gf_point(profitability ~ audience_score,
+    color = ~genre
+  ) %>%
+  gf_lm() %>%
+  gf_labs(
+    title = "Profitability vs Audience Score",
+    subtitle = "Movie Ratings: Trends by Genre"
+  )
+```
+
+## GGally
+
+```{r}
+ggplot2::theme_set(new = theme_classic())
+
+GGally::ggpairs(
+  movies_modified %>% drop_na(),
+  # Select Quant variables only for now
+  columns = c(
+    "profitability", "budget", "domestic_gross", "foreign_gross"
+  ),
+  switch = "both",
+  # axis labels in more traditional locations(left and bottom)
+
+  progress = FALSE,
+  # no compute progress messages needed
+
+  # Choose the diagonal graphs (always single variable! Think!)
+  diag = list(continuous = "barDiag"),
+  # choosing histogram,not density
+
+  # Choose lower triangle graphs, two-variable graphs
+  lower = list(continuous = wrap("smooth", alpha = 0.3, se = FALSE)),
+  title = "Movies Data Correlations Plot #1"
+)
+```
+
+```{r}
+glimpse(mtcars)
+```
+
+```{r}
+## Target variable: mpg
+## Calculate all correlations
+cor <- correlation::correlation(mtcars)
+cor
+```
+
+```{r}
+ggplot2::theme_set(new = theme_classic())
+
+cor %>%
+  # Filter for target variable `mpg` and plot
+  filter(Parameter1 == "mpg") %>%
+  gf_errorbar(CI_low + CI_high ~ reorder(Parameter2, r),
+    width = 0.5
+  ) %>%
+  gf_point(r ~ reorder(Parameter2, r), size = 4, color = "red") %>%
+  gf_hline(yintercept = 0, color = "blue", linewidth = 2) %>%
+  gf_labs(
+    title = "Correlation Errorbar Chart",
+    subtitle = "Target variable: mpg",
+    x = "Predictor Variable",
+    y = "Correlation Score with mpg"
+  )
+```

@@ -2,6 +2,7 @@
 title: "Experimentation"
 author: Meenakshi
 categories: Classwork
+description: Learning to clean data, convert factors, etc.
 format: html
 ---
 

@@ -1,6 +1,9 @@
 ---
-title: "EDA-Education"
+title: "Cuisines"
 author: "Shruthi Challa"
+categories: Assessment 2
+description: EDA of the "cuisines"
+format: html
 ---
 
 ```{r}
@@ -54,11 +57,11 @@ dplyr::glimpse(cuisines)
 base::dim(cuisines)
 utils::str(cuisines)
 ```
+
 ```{r}
 #Raw data visualization
 visdat::vis_dat(cuisines)
 ```
-
 
 ```{r}
 #Cleaning the Data
@@ -84,6 +87,7 @@ cuisines_clean
 ```{r}
 visdat::vis_dat(cuisines_clean)
 ```
+
 ```{r}
 #Data Munging
 cuisines_clean %>%
@@ -132,8 +136,9 @@ cuisines_clean %>%
     max_fat = max(fat, na.rm = T)
   )
 ```
-#Playing with Graphs
-##What is the most popular time of the year when the most recepies are released?
+
+# Playing with Graphs: What is the most popular time of the year when the most recipies are released?
+
 ```{r}
 ##Distribution of dishes across Countries
 cuisines_clean %>% 
@@ -157,6 +162,7 @@ gf_bar(~ calories | country, data = cuisines_clean) %>%
   ) %>% 
   gf_refine(scale_fill_brewer(palette = "-Set1"))
 ```
+
 ```{r}
 ##Average calorie & fat content of dishes significantly differs across countries
 cuisines_clean %>% 
@@ -167,6 +173,7 @@ gf_point(fat~ calories | country, data = cuisines_clean) %>%
   ) %>% 
   gf_refine(scale_fill_brewer(palette = "-Set1"))
 ```
+
 ```{r}
 cor <- correlation::correlation(cuisines_clean)
 cor
@@ -181,8 +188,6 @@ mosaic::cor_test(calories ~ protein, data = cuisines_clean) %>%
   )
 ```
 
-
-
 ```{r}
 ##High-protein dishes tend to have higher calorie counts
 cuisines_clean %>% 
@@ -195,7 +200,6 @@ gf_point(protein ~ calories, data = cuisines_clean) %>%
   gf_refine(scale_fill_brewer(palette = "Set1"))
 ```
 
-
 ```{r}
 ##carbohydrate-heavy dishes might take longer to prepare
 cuisines_clean %>% 
@@ -207,6 +211,7 @@ cuisines_clean %>%
   ) %>% 
   gf_refine(scale_fill_brewer(palette = "-Set1"))
 ```
+
 ```{r}
 ##Seeing if higher calorie dishes tend to have a higher average rating
 cuisines_clean %>% 
@@ -218,6 +223,7 @@ cuisines_clean %>%
   ) %>% 
   gf_refine(scale_fill_brewer(palette = "-Set1"))
 ```
+
 ```{r}
 ##Dishes that take longer to prepare have lower ratings due to effort required
 cuisines_clean %>%
@@ -230,6 +236,7 @@ cuisines_clean %>%
     title = "Plot 6: Dishes that take longer to prepare have lower ratings due to effort required",
   )
 ```
+
 ```{r}
 ##“Total Ratings” differ significantly across countries — indicating regional differences in user engagement
 cuisines_clean %>% 
@@ -242,6 +249,7 @@ gf_bar(~total_ratings, color = ~country, data = cuisines_clean) %>%
   gf_refine(scale_fill_brewer(palette = "Set1"))
 
 ```
+
 ```{r}
 ##Dishes by certain “Authors” (e.g., professional chefs vs. users) receive higher average ratings
 cuisines_clean %>% 
@@ -254,6 +262,7 @@ gf_point(total_ratings ~ author, data = cuisines_clean) %>%
   gf_refine(scale_fill_brewer(palette = "Set1"))
 
 ```
+
 ```{r}
 cuisines_clean %>% 
 gf_point(prep_time ~ cook_time | country, data = cuisines_clean) %>%
@@ -264,6 +273,7 @@ gf_point(prep_time ~ cook_time | country, data = cuisines_clean) %>%
   ) %>% 
   gf_refine(scale_fill_brewer(palette = "Set1"))
 ```
+
 ```{r}
 ##“Prep Time” and “Cook Time” are strongly correlated (complex dishes take long both to prep and cook)
 cuisines_clean %>% 
@@ -275,6 +285,7 @@ gf_point(prep_time ~ cook_time,color = ~country, data = cuisines_clean) %>%
   ) %>% 
   gf_refine(scale_fill_brewer(palette = "Set1"))
 ```
+
 ```{r}
 ##total time vs. reviews, we should see a general regression as time to cook a meal increases.
 cuisines_clean %>% 
@@ -293,6 +304,7 @@ cuisines_indian <- cuisines_clean %>%
 filter(country == "Indian")
 cuisines_indian
 ```
+
 ```{r}
 cuisines_indian %>% 
 gf_point(prep_time~cook_time, position = "stack") %>% 
@@ -311,6 +323,3 @@ gf_point(prep_time~cook_time, position = "stack") %>%
 ##Recently published dishes receive more “Total Ratings” (recency bias).
 ##Average “Calories” or “Fat” in dishes has declined over time — reflecting health trends
 ```
-
-
-

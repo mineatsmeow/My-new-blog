@@ -2,6 +2,7 @@
 title: "Classwork 8"
 author: Meenakshi
 categories: Classwork
+description: Learning to sample, etc.
 format: html
 ---
 

@@ -1,10 +1,17 @@
 ---
-title: "A2 Cardio-Dataset"
+title: "Cardio-Dataset"
 author: "Swetha KV"
 date: "2025-10-12"
-categories: [Scottish CVD]
+categories: Assessment 2
+description: EDA of the "CardioDataSets"
 format: html
 ---
+
+# Scottish Health Survey CVD
+
+The Scottish Health Survey (SHeS) provides comprehensive data on cardiovascular disease (CVD) prevalence, risk factors, and outcomes within Scotland’s population. Recent reports show that around 14-16% of adults in Scotland report having some form of CVD, which includes coronary heart disease, stroke, and other related conditions. The survey tracks self-reported doctor-diagnosed CVD alongside key risk factors such as obesity, hypertension, diabetes, and smoking. These findings highlight significant health inequalities, with higher prevalence and worse outcomes in more socioeconomically deprived areas of Scotland. The survey’s data contributes to public health strategies aimed at reducing CVD burden by improving early detection, managing risk factors, and targeting inequalities. Despite declines in mortality rates over recent decades, CVD remains a leading cause of death and morbidity in Scotland, driving ongoing monitoring and intervention efforts to improve cardiovascular health across the population.
+
+------------------------------------------------------------------------
 
 ## Setting up R Packages
 
@@ -29,7 +36,7 @@ library(naniar)
 library(DT)
 library(ggrepel)
 library(marquee)
-library(visStatistics)
+#library(visStatistics) not supported on my laptop
 ```
 
 ## Read Data
@@ -40,18 +47,10 @@ data(package = "CardioDataSets")
 
 ```{r}
 data("scottish_CVD_df", package = "CardioDataSets")
-View( scottish_CVD_df )
-```
-
-```{r}
-data("scottish_CVD_df", package = "CardioDataSets")
 dplyr::glimpse( scottish_CVD_df )
 ```
 
-##Data Dictionary
-
-
-##Examine Data
+## Examine Data
 
 ```{r}
 base::names(scottish_CVD_df)
@@ -88,7 +87,7 @@ scottish_CVD_df <- scottish_CVD_df %>%
 scottish_CVD_df <- scottish_CVD_df %>%
   naniar::replace_with_na_all(data = ., condition = ~ .x %in% common_na_numbers) %>%
   naniar::replace_with_na_all(data = ., condition = ~ .x %in% common_na_strings)
-glimpse(scottish_CVD_df_modified)
+glimpse(scottish_CVD_df)
 ```
 
 ```{r}
@@ -98,6 +97,7 @@ visdat::vis_miss(scottish_CVD_df)
 ```{r}
 scottish_CVD_df %>% tt ()
 ```
+
 ```{r}
 scottish_CVD_df %>%
   DT::datatable(
@@ -132,6 +132,7 @@ mosaic::cor_test(age ~ carstair, data = scottish_CVD_df) %>%
   )
 
 ```
+
 There is no significant correlation between age and socioeconomic deprivation (Carstairs index) in the dataset (r = -0.003, p = 0.761).
 
 This suggests that people of different ages are equally distributed across various levels of deprivation — older people are not more likely to live in deprived or affluent areas.
@@ -155,6 +156,7 @@ mosaic::cor_test(as.numeric(cvddef) ~ age, data = scottish_CVD_df) %>%
   knitr::kable(
     digits = 3)
 ```
+
 The correlation (r = 0.362) is positive and moderate in strength.
 
 The p-value = 0 means this result is highly significant - it’s not due to random chance.
@@ -176,9 +178,11 @@ scottish_CVD_df %>%
     y = "Carstairs Index"
   )
 ```
+
 ```{r}
 mosaic::cor_test(as.numeric(cvddef) ~ carstair, data = scottish_CVD_df)
 ```
+
 ```{r}
 mosaic::cor_test(as.numeric(cvddef) ~ carstair, data = scottish_CVD_df) %>%
   broom::tidy() %>%
@@ -229,6 +233,7 @@ mosaic::cor_test(smoke_num ~ age, data = scottish_CVD_df) %>%
     caption = "Correlation between Age and Sex")
 ##remove
 ```
+
 ```{r}
 #2
 scottish_CVD_df %>% 
@@ -241,6 +246,7 @@ scottish_CVD_df %>%
   )
 
 ```
+
 ```{r}
 #3 
 
@@ -251,4 +257,3 @@ mosaic::cor_test(carstair ~ smoke_num, data = scottish_CVD_df) %>%
     caption = "Correlation between Deprivation and Smoking"
   )
 ```
-

@@ -1,0 +1,157 @@
+---
+title: "Do the people of SMI belive in god or not?"
+author: Meenakshi
+categories: Assessment 3
+description: analysis and EDA
+format: html
+---
+
+# Peasant Hunch: Do the people of SMI belive in god or not?
+
+a survey of people from SMI, as what their opinion on god existing is ( Yes / No).
+
+## Data Dictionary
+
+A tibble with 47 observations and 3 variables: \## Data dictionary
+
+65 observations and 4 variables.
+
+## Qualitative Variables:
+
+> -   **gender** Gender of the student, M, F or Other.
+> -   **name** Name of the student.
+> -   **believe_in_god** do they believe in god (yes,no).
+
+## SetUp R Packages
+
+```{r}
+library(tidyverse)
+library(mosaic)
+library(vcd)
+library(naniar)
+library(visStatistics)
+library(janitor)
+library(ggformula)
+library(ggridges)
+library(skimr)
+library(resampledata)
+library(checkdown)
+library(tinytable)
+library(GGally)
+library(corrplot)
+library(ggplot2)
+library(dplyr)
+library(ggrepel)
+library(marquee)
+library(corrgram)
+library(crosstable)
+library(kableExtra)
+library(tinytable)
+library(DT)
+library(paletteer)
+```
+
+## Reading Data
+
+```{r}
+god <- readr::read_csv("Data/believe_in_god.csv")
+```
+
+## 🔍 Examine Data
+
+```{r}
+dim(god)
+base::names(god)
+utils::str(god)
+god <- god %>% clean_names(case = "snake")
+dplyr::glimpse(god)
+```
+
+## Dropping NA
+
+```{r}
+god_modified <- god %>%
+  naniar::replace_with_na_all(condition = ~ .x %in% common_na_numbers) %>%
+  replace_with_na_all(condition = ~ .x %in% common_na_strings)
+
+god_modified <- god_modified %>% drop_na()
+glimpse(god_modified)
+```
+
+## Viewing Missing Data
+
+```{r}
+visdat::vis_miss(god_modified)
+visdat::vis_dat(god_modified)
+```
+
+## Converting to a factor
+
+```{r}
+god_modified <- god_modified %>%
+  mutate(
+    gender = as.factor(gender),
+    name = as.factor(name),
+    believe_in_god = as.factor(believe_in_god)
+  )
+
+glimpse(god_modified)
+```
+
+## 👾 Data Cleaned
+
+```{r}
+god_modified %>%
+  DT::datatable(
+    style = "default",
+    caption = htmltools::tags$caption(
+      style = "caption-side: top; text-align: left; color: black; font-size: 100%;", "Do people believe in god or not"
+    ),
+    options = list(pageLength = 10, autoWidth = TRUE)
+  ) %>%
+  DT::formatStyle(
+    columns = names(god_modified),
+    fontFamily = "Georgia",
+    fontSize = "12px"
+  )
+```
+
+## prop test
+
+```{r}
+god_tbl <- table(god_modified$gender, god_modified$believe_in_god)
+
+prop.test(god_tbl)
+```
+
+## grouped barchart of belief grouped by gender
+
+```{r}
+god_modified %>%
+  count(gender, believe_in_god) %>%
+  ggplot(aes(x = gender, y = n, fill = believe_in_god)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Count of Belief in God by Gender",
+    x = "Gender",
+    y = "Count",
+    fill = "Believe in God"
+  ) +
+  scale_fill_manual(values = c("#5BA19B", "#F29E4C")) +
+  theme_minimal(base_size = 15)
+
+```
+
+## mosaic plot of belief and gender
+
+```{r}
+mosaic(~ gender + believe_in_god,
+       data = god_modified,
+       shade = TRUE,  
+       legend = TRUE, 
+       labeling_args = list(
+         set_varnames = c(gender = "Gender", believe_in_god = "Belief in God")
+       ),
+       main = "Belief in God by Gender")
+
+```

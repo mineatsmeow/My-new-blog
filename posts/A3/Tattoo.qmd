@@ -1,0 +1,153 @@
+---
+title: "Tattoo Attraction in SMI"
+author: Meenakshi
+categories: Assessment 3
+description: analysis and EDA
+format: html
+---
+# Free Hunch #10: Do tattoos make people look attractive or not?
+ a survey of people from different colleges on campus, as what their opinion is on tattoos and attractiveness ( Yes / No). Survey Males and Females, Students and Faculty. Check the number of respondents in each sub-group!! And then a chi-square test to see if there are differences in proportions.
+
+
+## Data Dictionary
+
+A tibble with 40 observations and 3 variables:
+
+## Qualitative Variables:
+
+> -   **gender** Gender of the student, M, F or Other.
+> -   **Tattoo_Attractive** Do they find tattoos attractive (yes/no)
+> -   **name** Name of the student.
+## SetUp R Packages
+
+```{r}
+library(tidyverse)
+library(mosaic)
+library(vcd)
+library(naniar)
+library(visStatistics)
+library(janitor)
+library(ggformula)
+library(ggridges)
+library(skimr)
+library(resampledata)
+library(checkdown)
+library(tinytable)
+library(GGally)
+library(corrplot)
+library(ggplot2)
+library(dplyr)
+library(ggrepel)
+library(marquee)
+library(corrgram)
+library(crosstable)
+library(kableExtra)
+library(tinytable)
+library(DT)
+library(paletteer)
+```
+
+## Reading Data
+
+```{r}
+tattoo <- readr::read_csv("Data/tattoo_attraction.csv")
+```
+
+## 🔍 Examine Data
+
+```{r}
+dim(tattoo)
+base::names(tattoo)
+dplyr::glimpse(tattoo)
+utils::str(tattoo)
+tattoo <- tattoo %>% clean_names(case = "snake")
+```
+
+## Dropping NA
+
+```{r}
+tattoo_modified <- tattoo %>%
+  naniar::replace_with_na_all(condition = ~ .x %in% common_na_numbers) %>%
+  replace_with_na_all(condition = ~ .x %in% common_na_strings)
+
+tattoo_modified <- tattoo_modified %>% drop_na()
+glimpse(tatoo_modified)
+```
+
+## Viewing Missing Data
+
+```{r}
+visdat::vis_miss(tattoo_modified)
+visdat::vis_dat(tattoo_modified)
+```
+
+## Converting to a factor
+
+```{r}
+tattoo_modified <- tattoo_modified %>%
+  mutate(
+    gender = as.factor(gender),
+    name = as.factor(name),
+    tattoo_attractive = as.factor(tattoo_attractive)
+  )
+
+glimpse(tattoo_modified)
+```
+
+## 👾 Data Cleaned
+
+```{r}
+tattoo_modified %>%
+  DT::datatable(
+    style = "default",
+    caption = htmltools::tags$caption(
+      style = "caption-side: top; text-align: left; color: black; font-size: 100%;", "Do tattoos make people look attractive or not"
+    ),
+    options = list(pageLength = 10, autoWidth = TRUE)
+  ) %>%
+  DT::formatStyle(
+    columns = names(tattoo_modified),
+    fontFamily = "Georgia",
+    fontSize = "12px"
+  )
+```
+## Do students in SMI find tattoos attractive
+```{r}
+tattoo_modified %>%
+  count(tattoo_attractive) %>%
+  ggplot(aes(x = tattoo_attractive, y = n, fill = tattoo_attractive)) +
+  geom_col(width = 0.7) +
+  labs(
+    title = "Are Tattoos Considered Attractive?",
+    x = "",
+    y = "Number of Responses"
+  ) +
+  scale_fill_manual(values = c("#5BA19B", "#F29E4C")) +
+  theme_minimal(base_size = 15) +
+  theme(legend.position = "none")
+```
+## Tattoo atractiveness grouped by gender
+```{r}
+tattoo_modified %>%
+  count(gender, tattoo_attractive) %>%
+  ggplot(aes(x = gender, y = n, fill = tattoo_attractive)) +
+  geom_col(position = "dodge", width = 0.7) +
+  labs(
+    title = "Are Tattoos Considered Attractive? (Grouped by Gender)",
+    x = "Gender",
+    y = "Number of Responses"
+  ) +
+  scale_fill_manual(values = c("#5BA19B", "#F29E4C")) +
+  theme_minimal(base_size = 15)
+```
+
+## chisquare test
+```{r}
+# Creating a contingency table
+tattoo_gender_tab <- table(tatoo_modified$gender, tatoo_modified$tattoo_attractive)
+
+# Runing Chi-square test
+chisq.test(tattoo_gender_tab)
+
+```
+

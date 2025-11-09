@@ -1,0 +1,202 @@
+---
+title: "Classwork 10"
+author: Meenakshi
+categories: Classwork
+description: Learning to test for a single proportion, and inference test for two proportions.
+format: html
+---
+
+## SetUp R Packages
+
+```{r}
+library(tidyverse)
+library(mosaic) # Our go-to package
+library(ggformula)
+library(infer) # An alternative package for inference using tidy data
+library(broom) # Clean test results in tibble form
+library(skimr) # data inspection
+library(tinytable) # Pretty Tables
+library(kableExtra) # Pretty Tables
+library(ggprism) # Prism-like ggplot themes
+##
+library(visStatistics) # All-in-one Stats test package
+##
+library(openintro) # datasets
+
+library(vcd)
+### Dataset from Chihara and Hesterberg's book (Second Edition)
+library(resampledata)
+```
+
+## Case Study 1: YRBSS Survey
+
+```{r}
+data(yrbss, package = "openintro")
+yrbss
+```
+
+For our first Research Question, we will choose the column `helmet_12m`: Remember that you can use `filter` to limit the dataset to just non-helmet wearers. Here, we will name the (filtered ) dataset `no_helmet`.
+
+```{r}
+yrbss %>%
+  group_by(helmet_12m) %>%
+  count()
+```
+
+Also, it may be easier to calculate the proportion if we create a new variable that specifies whether the individual has [*texted every day while driving*]{.underline} over the past 30 days or not. We will call this variable `text_ind`.
+
+```{r}
+yrbss %>%
+  group_by(text_while_driving_30d) %>%
+  count()
+```
+
+This is the proportion of people in this sample who do text when they drive without a helmet.
+
+```{r}
+no_helmet_text <- yrbss %>%
+  filter(helmet_12m == "never") %>%
+  mutate(text_ind = ifelse(text_while_driving_30d == "30", "yes", "no")) %>%
+  # removing most of the other variables
+  select(age, gender, text_ind)
+no_helmet_text
+```
+
+Dropping NA and filtering to take count of the variable `text_ind` only.
+
+```{r}
+no_helmet_text %>%
+  drop_na() %>%
+  count(text_ind)
+```
+
+```{r}
+no_helmet_text %>%
+  drop_na() %>%
+  summarize(prop = prop(text_ind, success = "yes"), n = n())
+```
+
+### Visualizing a Single Proportion
+
+```{r}
+ggplot2::theme_set(new = theme_classic())
+
+no_helmet_text %>%
+  drop_na() %>%
+  gf_bar(~text_ind) %>%
+  gf_labs(
+    x = "texted?",
+    title = "High-Schoolers who texted every day",
+    subtitle = "While driving with no helmet on!!"
+  )
+```
+
+### Inference
+
+```{r}
+mosaic::binom.test(~text_ind, data = no_helmet_text, success = "yes")
+```
+
+```{r}
+mosaic::binom.test(~text_ind, data = no_helmet_text, success = "yes") %>%
+  broom::tidy()
+```
+
+## Case Study 2: `GSS2002` dataset
+
+```{r}
+data(GSS2002, package = "resampledata")
+glimpse(GSS2002)
+```
+
+We pull out Data of the variable `Education` and `DeathPenalty` only.
+
+```{r}
+GSS2002 %>% count(Education)
+```
+
+```{r}
+GSS2002 %>% count(DeathPenalty)
+```
+
+### Data Munging
+
+We drop NA entries in `Education` and `Death Penalty` and also check the levels of the two factors and set them up as we need:
+
+```{r}
+GSS2002_modified <- GSS2002 %>%
+  dplyr::select(Education, DeathPenalty) %>%
+  tidyr::drop_na(., c(Education, DeathPenalty)) %>%
+  # Re-level the factors
+  mutate(
+    Education = factor(Education,
+      levels = c("Left HS", "HS", "Jr Col", "Bachelors", "Graduate"),
+      labels = c("Left HS", "HS", "Jr Col", "Bachelors", "Graduate"),
+      # ordered = TRUE # Nope can't use this. See below
+    ),
+    DeathPenalty = factor(DeathPenalty,
+      levels = c("Favor", "Oppose"),
+      labels = c("Favor", "Oppose")
+      # ordered = TRUE # Nope can't use this. See below
+    )
+  )
+glimpse(GSS2002_modified)
+```
+### Contingency Table
+```{r}
+gss_vcd_table <- vcd::structable(Education ~ DeathPenalty, # cols ~ rows
+  data = GSS2002_modified
+)
+gss_vcd_table %>% addmargins()
+```
+### Contingency Table Plots
+```{r}
+# Already computed
+# gss_vcd_table <- vcd::structable(Education ~ DeathPenalty, # cols ~ rows
+#                              data = GSS2002_modified)
+
+gss_vcd_table %>%
+  vcd::mosaic(
+    gp = shading_hsv, direction = "h",
+    main = "GSS2002 Education vs Death Penalty Mosaic Chart",
+    legend = TRUE,
+    labeling = labeling_border(
+      varnames = c("F", "F"), # Remove variable name labels
+      rot_labels = c(90, 0, 0, 0), # t,r,b,l?
+      just_labels = c(
+        "left", # Top Side. How?
+        "left", # Right side
+        "left", # Bottom side
+        "right"
+      )
+    )
+  ) # Left side. How?
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

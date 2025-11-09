@@ -1,0 +1,162 @@
+---
+title: "Weird Dad"
+author: Meenakshi
+categories: Assessment 3
+description: analysis and EDA
+format: html
+---
+
+# Free Hunch #8: All Srishti Dads are Weird.
+
+Here's a random sampling of finding whether Srishti dad's are weird or not, we also venture onto MIT dads, showing two types demographics here.
+
+## Data dictionary
+
+65 observations and 4 variables.
+
+## Qualitative Variables:
+
+> -   **gender** Gender of the student, M, F or Other.
+> -   **college** College of the student, either being SMI or MIT.
+> -   **is_dad_weird** Student perception of whether they found their dad weird or not.
+> -   **name** Name of the student.
+
+## SetUp R Packages
+
+```{r}
+library(tidyverse)
+library(mosaic)
+library(vcd)
+library(naniar)
+library(visStatistics)
+library(janitor)
+library(ggformula)
+library(ggridges)
+library(skimr)
+library(resampledata)
+library(checkdown)
+library(tinytable)
+library(GGally)
+library(corrplot)
+library(ggplot2)
+library(dplyr)
+library(ggrepel)
+library(marquee)
+library(corrgram)
+library(crosstable)
+library(kableExtra)
+library(tinytable)
+library(DT)
+library(paletteer)
+```
+
+## Reading Data
+
+```{r}
+dad_weird <- readr::read_csv("Data/weird_dads.csv")
+```
+
+## 🔍 Examine Data
+
+```{r}
+dim(dad_weird)
+base::names(dad_weird)
+dplyr::glimpse(dad_weird)
+utils::str(dad_weird)
+```
+
+## Dropping NA
+
+```{r}
+dad_weird_modified <- dad_weird %>%
+  naniar::replace_with_na_all(condition = ~ .x %in% common_na_numbers) %>%
+  replace_with_na_all(condition = ~ .x %in% common_na_strings)
+
+dad_weird_modified <- dad_weird_modified %>% drop_na()
+glimpse(dad_weird_modified)
+```
+
+## Viewing Missing Data
+
+```{r}
+visdat::vis_miss(dad_weird_modified)
+visdat::vis_dat(dad_weird_modified)
+```
+
+## Converting to a factor
+
+```{r}
+dad_weird_modified <- dad_weird_modified %>%
+  mutate(
+    gender = as.factor(gender),
+    college = as.factor(college),
+    is_dad_weird = as.factor(is_dad_weird),
+    name = as.factor(name)
+  )
+
+glimpse(dad_weird_modified)
+```
+
+## 👾 Data Cleaned
+
+```{r}
+dad_weird_modified %>%
+  DT::datatable(
+    style = "default",
+    caption = htmltools::tags$caption(
+      style = "caption-side: top; text-align: left; color: black; font-size: 100%;", "Weird Dads in SMI"
+    ),
+    options = list(pageLength = 10, autoWidth = TRUE)
+  ) %>%
+  DT::formatStyle(
+    columns = names(dad_weird_modified),
+    fontFamily = "Georgia",
+    fontSize = "12px"
+  )
+```
+
+## Mosaic plots 001
+
+```{r}
+# MIT
+mit_data <- dad_weird_modified %>% filter(college == "MIT")
+mosaicplot(~ gender + is_dad_weird, data = mit_data, color = TRUE, main = "MIT: Gender to Weird Dad")
+
+# SMI
+smi_data <- dad_weird_modified %>% filter(college == "SMI")
+mosaicplot(~ gender + is_dad_weird, data = smi_data, color = TRUE, main = "SMI: Gender vs Weird Dad")
+
+```
+
+## Statistical Analysis
+
+```{r}
+tab <- table(dad_weird_modified$college, dad_weird_modified$is_dad_weird)
+print(tab)
+```
+
+## Chi-square test
+
+```{r}
+chisq.test(tab)
+```
+
+## Mosaic plots 002
+
+```{r}
+
+
+tab <- table(dad_weird_modified$college, dad_weird_modified$is_dad_weird)
+
+
+mosaic(~ college + is_dad_weird, data = dad_weird_modified,
+       shade = TRUE,
+       main = "Are dads weird?: MIT vs SMI")
+```
+
+## Bar chart
+
+```{r}
+gf_bar(~is_dad_weird | college, data = dad_weird_modified, fill = ~is_dad_weird, position = "fill")
+
+```

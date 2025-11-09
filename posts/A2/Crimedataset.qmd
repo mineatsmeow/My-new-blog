@@ -207,6 +207,7 @@ gf_bar(~location_category, data = homicides15_tbl_df_cleaned, fill = ~location_c
 ```
 
 ## Crime Count by City
+
 ```{r}
 
 gf_bar(~city_name, data = homicides15_tbl_df_cleaned, fill = ~city_name) %>%

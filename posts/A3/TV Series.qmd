@@ -1,0 +1,154 @@
+---
+title: "Friends vs Modern Family vs House vs Big Bang Theory"
+author: Meenakshi
+categories: Assessment 3
+description: analysis and EDA
+format: html
+---
+
+# Free Hunch #4b:  Friends vs Modern Family vs House vs Big Bang Theory
+
+And then a two-independent-sample test for means. And Permutation and all that stuff.
+
+Sure! Based on your **`tv_series.csv`** file, here’s the data dictionary written in the same format and tone as your example 👇
+
+---
+
+## Data Dictionary
+
+A tibble with 52 observations and 5 variables:
+
+## Qualitative Variables:
+
+>  **name**
+>   Name of the student respondent.
+>
+>  **gender**
+>   Gender of the student — Male or Female.
+
+## Quantitative Variables:
+
+>  **friends**
+>   Rating given by the student for the TV show *Friends* (on a numerical scale).
+>
+>  **modern_family**
+>   Rating given by the student for the TV show *Modern Family* (on a numerical scale).
+>
+>  **big_bang_theory**
+>   Rating given by the student for the TV show *The Big Bang Theory* (on a numerical scale).
+ 
+## SetUp R Packages
+
+```{r}
+library(tidyverse)
+library(mosaic)
+library(vcd)
+library(naniar)
+library(visStatistics)
+library(janitor)
+library(ggformula)
+library(ggridges)
+library(skimr)
+library(resampledata)
+library(checkdown)
+library(tinytable)
+library(GGally)
+library(corrplot)
+library(ggplot2)
+library(dplyr)
+library(ggrepel)
+library(marquee)
+library(corrgram)
+library(crosstable)
+library(kableExtra)
+library(tinytable)
+library(DT)
+library(paletteer)
+```
+
+## Reading Data
+
+```{r}
+series <- readr::read_csv("Data/tv_series.csv")
+```
+
+## 🔍 Examine Data
+
+```{r}
+dim(series)
+base::names(series)
+dplyr::glimpse(series)
+utils::str(series)
+series <- series %>% clean_names(case = "snake")
+```
+
+## Dropping NA
+
+```{r}
+series_modified <- series %>%
+  naniar::replace_with_na_all(condition = ~ .x %in% common_na_numbers) %>%
+  replace_with_na_all(condition = ~ .x %in% common_na_strings)
+
+series_modified <- series_modified %>% drop_na()
+glimpse(series_modified)
+```
+
+## Viewing Missing Data
+
+```{r}
+visdat::vis_miss(series_modified)
+visdat::vis_dat(series_modified)
+```
+
+## Converting to a factor
+
+```{r}
+series_modified <- series_modified %>%
+  mutate(
+    name = as.factor(name),
+    gender = as.factor(gender),
+  )
+
+glimpse(money_modified)
+```
+
+## 👾 Data Cleaned
+
+```{r}
+series_modified %>%
+  DT::datatable(
+    style = "default",
+    caption = htmltools::tags$caption(
+      style = "caption-side: top; text-align: left; color: black; font-size: 100%;", "Friends vs Modern Family vs House vs Big Bang Theory"
+    ),
+    options = list(pageLength = 10, autoWidth = TRUE)
+  ) %>%
+  DT::formatStyle(
+    columns = names(series_modified),
+    fontFamily = "Georgia",
+    fontSize = "12px"
+  )
+```
+## ANOVA
+```{r}
+## ANOVA for Friends
+anova_friends <- aov(friends ~ gender, data = series_modified)
+summary(anova_friends)
+
+## ANOVA for Modern Family
+anova_modern <- aov(modern_family ~ gender, data = series_modified)
+summary(anova_modern)
+
+## ANOVA for Big Bang Theory
+anova_bigbang <- aov(big_bang_theory ~ gender, data = series_modified)
+summary(anova_bigbang)
+```
+
+##Boxplot
+```{r}
+ggplot(series_modified, aes(x = gender, y = friends, fill = gender)) +
+  geom_boxplot() +
+  labs(title = "Friends Ratings by Gender", x = "Gender", y = "Rating") +
+  theme_minimal()
+```
+

@@ -1,0 +1,166 @@
+---
+title: "Weekly Expenditure of students in SMI"
+author: Meenakshi
+categories: Assessment 3
+description: analysis and EDA
+format: html
+---
+
+# Free Hunch #1: Guys have more pocket money than Gals.
+
+Have you got money? Open your wallet and show me how much. Guys and Gals. Will this work in these UPI days? And well-dressed Gals don’t have pockets in their clothing, Uncle…
+
+Al right, then ask “How much did you spend today?” Again, Guys and Gals.
+
+And then a two-independent-sample test for means. And Permutation and all that stuff.
+
+## Data Dictionary
+
+A tibble with 40 observations and 3 variables:
+
+## Qualitative Variables:
+
+> -   **gender** Gender of the student, M, F or Other.
+> -   **name** Name of the student. 
+
+## Quantitative Variables:
+> -   **Total_Expenditure_Last_Week** Total Expenditure Last Week (in numbers).
+
+## SetUp R Packages
+
+```{r}
+library(tidyverse)
+library(mosaic)
+library(vcd)
+library(naniar)
+library(visStatistics)
+library(janitor)
+library(ggformula)
+library(ggridges)
+library(skimr)
+library(resampledata)
+library(checkdown)
+library(tinytable)
+library(GGally)
+library(corrplot)
+library(ggplot2)
+library(dplyr)
+library(ggrepel)
+library(marquee)
+library(corrgram)
+library(crosstable)
+library(kableExtra)
+library(tinytable)
+library(DT)
+library(paletteer)
+```
+
+## Reading Data
+
+```{r}
+money <- readr::read_csv("Data/weekly_expenditure.csv")
+```
+
+## 🔍 Examine Data
+
+```{r}
+dim(money)
+base::names(money)
+dplyr::glimpse(money)
+utils::str(money)
+money <- money %>% clean_names(case = "snake")
+```
+
+## Dropping NA
+
+```{r}
+money_modified <- money %>%
+  naniar::replace_with_na_all(condition = ~ .x %in% common_na_numbers) %>%
+  replace_with_na_all(condition = ~ .x %in% common_na_strings)
+
+money_modified <- money_modified %>% drop_na()
+glimpse(money_modified)
+```
+
+## Viewing Missing Data
+
+```{r}
+visdat::vis_miss(money_modified)
+visdat::vis_dat(money_modified)
+```
+
+## Converting to a factor
+
+```{r}
+money_modified <- money_modified %>%
+  mutate(
+    name = as.factor(name)
+  )
+
+glimpse(money_modified)
+```
+
+## 👾 Data Cleaned
+
+```{r}
+money_modified %>%
+  DT::datatable(
+    style = "default",
+    caption = htmltools::tags$caption(
+      style = "caption-side: top; text-align: left; color: black; font-size: 100%;", "Weekly Expenditure"
+    ),
+    options = list(pageLength = 10, autoWidth = TRUE)
+  ) %>%
+  DT::formatStyle(
+    columns = names(money_modified),
+    fontFamily = "Georgia",
+    fontSize = "12px"
+  )
+```
+
+## Ttest
+
+```{r}
+library(dplyr)
+money_modified$total_expenditure_last_week <- as.numeric(as.character(money_modified$total_expenditure_last_week))
+# Two-sample t-test
+t.test(total_expenditure_last_week ~ gender, data = money_modified)
+
+# Permutation test setup
+set.seed(123)
+obs_diff <- money_modified %>%
+  group_by(gender) %>%
+  summarize(mean_spend = mean(total_expenditure_last_week)) %>%
+  summarize(diff = diff(mean_spend)) %>%
+  pull(diff)
+
+perm_diff <- function(data, n_perm = 1000){
+  replicate(n_perm, {
+    permuted_gender <- sample(data$gender)
+    data %>%
+      mutate(gender = permuted_gender) %>%
+      group_by(gender) %>%
+      summarize(mean_spend = mean(total_expenditure_last_week)) %>%
+      summarize(diff = diff(mean_spend)) %>%
+      pull(diff)
+  })
+}
+
+permutation_diffs <- perm_diff(money_modified)
+
+# Calculate two-tailed permutation p-value
+mean(abs(permutation_diffs) >= abs(obs_diff))
+```
+
+```{r}
+ggplot(money_modified, aes(x = total_expenditure_last_week, fill = gender)) +
+  geom_density(alpha = 0.5) +
+  labs(
+    title = "Density Plot of Weekly Expenditure by Gender",
+    x = "Total Expenditure Last Week",
+    y = "Density"
+  ) +
+  scale_fill_manual(values = c("#5BA19B", "#F29E4C")) +
+  theme_minimal(base_size = 15)
+
+```
